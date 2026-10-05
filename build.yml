@@ -1,0 +1,46 @@
+name: Build Samsung Remote
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: bash prepare.sh
+      - run: flutter build apk --release
+      - run: cp build/app/outputs/flutter-apk/app-release.apk Samsung-Remote.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Samsung-Remote-Android
+          path: Samsung-Remote.apk
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: bash prepare.sh
+      - run: flutter build ios --release --no-codesign
+      - name: Package unsigned IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/ios/iphoneos/Runner.app Payload/
+          zip -qr Samsung-Remote.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Samsung-Remote-iPhone
+          path: Samsung-Remote.ipa
